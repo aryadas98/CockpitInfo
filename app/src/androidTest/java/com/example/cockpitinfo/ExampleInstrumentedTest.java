@@ -1,4 +1,4 @@
-package com.example.planetracker;
+package com.example.cockpitinfo;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
