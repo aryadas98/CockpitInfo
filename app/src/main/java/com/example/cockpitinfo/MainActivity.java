@@ -20,6 +20,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
+    private Sensor magnetometer;
+
+    private float[] gravity = new float[3];
+    private float[] mfield  = new float[3];
 
     private long acc_lasttime = 0;
     private long loc_lasttime = 0;
@@ -44,7 +48,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         // Accelerometer
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer , SensorManager.SENSOR_DELAY_NORMAL);
+
+        // Magnetometer
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magnetometer , SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -52,17 +60,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Sensor sensor = sensorEvent.sensor;
 
         if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float x = sensorEvent.values[0];
-            float y = sensorEvent.values[1];
-            float z = sensorEvent.values[2];
+            gravity[0] = sensorEvent.values[0];
+            gravity[1] = sensorEvent.values[1];
+            gravity[2] = sensorEvent.values[2];
 
             long curTime = System.currentTimeMillis();
 
-            if ((curTime - acc_lasttime) > 500) {
-                float acc = (float)Math.sqrt(x*x + y*y + z*z);
+            if ((curTime - acc_lasttime) > 100) {
+                float acc = (float)Math.sqrt(gravity[0]*gravity[0]+
+                                             gravity[1]*gravity[1]+
+                                             gravity[2]*gravity[2]);
                 float g = acc/9.81f;
                 acc_out.setText(String.format("%.2f", acc)+" m/s "+String.format("%.2f", g)+" g");
                 acc_lasttime = curTime;
+            }
+        }
+
+        if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            mfield[0] = sensorEvent.values[0];
+            mfield[1] = sensorEvent.values[1];
+            mfield[2] = sensorEvent.values[2];
+
+            float R[] = new float[9];
+            float I[] = new float[9];
+            boolean success = SensorManager.getRotationMatrix(R, I, gravity, mfield);
+
+            if (success) {
+                float orientation[] = new float[3];
+                SensorManager.getOrientation(R, orientation);
+                float heading = (float) Math.toDegrees(orientation[0]);
+                float pitch = (float) Math.toDegrees(orientation[1]);
+                float roll = (float) Math.toDegrees(orientation[2]);
+
+                hed_out.setText(heading+"\n"+pitch+"\n"+roll);
             }
         }
     }
