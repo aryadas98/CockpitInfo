@@ -5,6 +5,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -20,6 +23,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor magnetometer;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     private float[] gravity = new float[3];
     private float[] mfield  = new float[3];
@@ -50,6 +55,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, magnetometer , SensorManager.SENSOR_DELAY_NORMAL);
+
+        // GPS
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        updateLocInfo(lastKnownLocation);
+
+        locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                updateLocInfo(location);
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+            public void onProviderEnabled(String provider) {}
+
+            public void onProviderDisabled(String provider) {}
+        };
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30*1000, 0, locationListener);
     }
 
     @Override
@@ -95,7 +120,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                     heading = (heading + 360) % 360;
                     pitch *= -1;
-                    roll *= -1;
 
                     ori_out.setText(String.format("%.1f", pitch) + "°  " +
                             String.format("%.1f", roll) + "°  " +
@@ -107,9 +131,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    void updateLocInfo (Location location) {
+        if (location != null) {
+            float latitude = (float) location.getLatitude();
+            float longitude = (float) location.getLongitude();
+            float altitude = (float) location.getAltitude();
+            float altitude_feet = altitude / 3.28f;
+
+            String latitude_str = String.format("%.1f", latitude) + '°' + (latitude >= 0 ? 'N' : 'S');
+            String longitude_str = String.format("%.1f", longitude) + '°' + (longitude >= 0 ? 'E' : 'W');
+
+            String altitude_str, altitude_feet_str;
+            if (altitude > 1000) altitude_str = (int) (altitude / 1000) + " km";
+            else altitude_str = (int) altitude + " m";
+
+            if (altitude_feet > 1000) altitude_feet_str = (int) (altitude_feet / 1000) + "k feet";
+            else altitude_feet_str = (int) altitude_feet + " feet";
+
+            loc_out.setText(latitude_str + "  " + longitude_str + "\n" + altitude_str + "  " + altitude_feet_str);
+        }
+    }
+
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Do nothing
+        // Do nothing.
     }
 
     public void onCheckClick(View view) {
@@ -126,10 +171,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onPause() {
         super.onPause();
         sensorManager.unregisterListener(this);
+        locationManager.removeUpdates(locationListener);
     }
 
     protected void onResume() {
         super.onResume();
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magnetometer , SensorManager.SENSOR_DELAY_NORMAL);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30*1000, 0, locationListener);
     }
 }

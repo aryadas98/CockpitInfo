@@ -26,7 +26,6 @@
             android:id="@+id/acc_out"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="15dp"
             android:layout_weight="1"
             android:text="9.81 m/s 0.05 g" />
 
@@ -51,9 +50,8 @@
             android:id="@+id/loc_out"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="15dp"
             android:layout_weight="1"
-            android:text="23°N  82.5°E\n\n10 km 30k feet" />
+            android:text="Searching for GPS ..." />
 
         <CheckBox
             android:id="@+id/loc_log"
@@ -76,7 +74,6 @@
             android:id="@+id/ori_out"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="15dp"
             android:layout_weight="1"
             android:text="1°  10°  90°" />
 

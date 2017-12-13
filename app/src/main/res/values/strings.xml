@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Cockpit Info</string>
-    <string name="location_message">Location and altitude are measured using GPS. Reference line is WGS84 Reference Ellipsoid.</string>
+    <string name="location_message">Reference line for altitude is WGS84 Reference Ellipsoid.</string>
     <string name="orientation_message">Orientation is listed as <b>Pitch Roll Heading</b>. Orientation is measured by combining data from accelerometer and magnetic field sensor.</string>
 </resources>
