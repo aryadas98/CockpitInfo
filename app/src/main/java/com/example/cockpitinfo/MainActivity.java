@@ -15,8 +15,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private TextView acc_out;
     private TextView loc_out;
-    private TextView alt_out;
-    private TextView hed_out;
+    private TextView ori_out;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -27,12 +26,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private long acc_lasttime = 0;
     private long loc_lasttime = 0;
-    private long hed_lasttime = 0;
+    private long ori_lasttime = 0;
 
     private boolean acc_log = false;
     private boolean loc_log = false;
-    private boolean alt_log = false;
-    private boolean hed_log = false;
+    private boolean ori_log = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +40,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // TextViews
         acc_out = (TextView) findViewById(R.id.acc_out);
         loc_out = (TextView) findViewById(R.id.loc_out);
-        alt_out = (TextView) findViewById(R.id.alt_out);
-        hed_out = (TextView) findViewById(R.id.hed_out);
+        ori_out = (TextView) findViewById(R.id.ori_out);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         // Accelerometer
@@ -71,35 +68,48 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                              gravity[1]*gravity[1]+
                                              gravity[2]*gravity[2]);
                 float g = acc/9.81f;
-                acc_out.setText(String.format("%.2f", acc)+" m/s "+String.format("%.2f", g)+" g");
+                acc_out.setText(String.format("%.2f", acc)+" m/s "+
+                                String.format("%.2f", g)+" g");
                 acc_lasttime = curTime;
             }
         }
 
         if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            mfield[0] = sensorEvent.values[0];
-            mfield[1] = sensorEvent.values[1];
-            mfield[2] = sensorEvent.values[2];
 
-            float R[] = new float[9];
-            float I[] = new float[9];
-            boolean success = SensorManager.getRotationMatrix(R, I, gravity, mfield);
+            long curTime = System.currentTimeMillis();
+            if ((curTime - ori_lasttime) > 100) {
+                mfield[0] = sensorEvent.values[0];
+                mfield[1] = sensorEvent.values[1];
+                mfield[2] = sensorEvent.values[2];
 
-            if (success) {
-                float orientation[] = new float[3];
-                SensorManager.getOrientation(R, orientation);
-                float heading = (float) Math.toDegrees(orientation[0]);
-                float pitch = (float) Math.toDegrees(orientation[1]);
-                float roll = (float) Math.toDegrees(orientation[2]);
+                float R[] = new float[9];
+                float I[] = new float[9];
+                boolean success = SensorManager.getRotationMatrix(R, I, gravity, mfield);
 
-                hed_out.setText(heading+"\n"+pitch+"\n"+roll);
+                if (success) {
+                    float orientation[] = new float[3];
+                    SensorManager.getOrientation(R, orientation);
+                    float heading = (float) Math.toDegrees(orientation[0]);
+                    float pitch = (float) Math.toDegrees(orientation[1]);
+                    float roll = (float) Math.toDegrees(orientation[2]);
+
+                    heading = (heading + 360) % 360;
+                    pitch *= -1;
+                    roll *= -1;
+
+                    ori_out.setText(String.format("%.1f", pitch) + "°  " +
+                            String.format("%.1f", roll) + "°  " +
+                            String.format("%.1f", heading) + "°");
+                }
+
+                ori_lasttime = curTime;
             }
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        // Do nothing
     }
 
     public void onCheckClick(View view) {
@@ -109,8 +119,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         switch(view.getId()) {
             case R.id.acc_log: acc_log = checked; break;
             case R.id.loc_log: loc_log = checked; break;
-            case R.id.alt_log: alt_log = checked; break;
-            case R.id.hed_log: hed_log = checked; break;
+            case R.id.ori_log: ori_log = checked; break;
         }
     }
 
