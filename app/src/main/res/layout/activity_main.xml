@@ -16,7 +16,7 @@
 
     <TableRow android:gravity ="center_vertical">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:padding="15dp"
             android:layout_weight="1"
@@ -24,14 +24,14 @@
 
         <TextView
             android:id="@+id/acc_out"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="9.81 m/s 0.05 g" />
 
         <CheckBox
             android:id="@+id/acc_log"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onCheckClick"
@@ -40,22 +40,22 @@
 
     <TableRow android:gravity = "center_vertical">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:padding="15dp"
             android:layout_weight="1"
-            android:text="Location\n\nAltitude" />
+            android:text="Location\n\nAltitude\n\nSpeed" />
 
         <TextView
             android:id="@+id/loc_out"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Searching for GPS ..." />
 
         <CheckBox
             android:id="@+id/loc_log"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onCheckClick"
@@ -64,7 +64,7 @@
 
     <TableRow android:gravity="center_vertical">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:padding="15dp"
             android:layout_weight="1"
@@ -72,14 +72,14 @@
 
         <TextView
             android:id="@+id/ori_out"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="1°  10°  90°" />
 
         <CheckBox
             android:id="@+id/ori_log"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onCheckClick"
@@ -102,7 +102,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="10dp"
-        android:text="Log files are stored at ~/PlaneTracker/" />
+        android:text="Log files are stored at ~/CockpitInfo/" />
 
     <TextView
         android:layout_width="wrap_content"

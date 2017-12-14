@@ -9,10 +9,18 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -30,12 +38,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float[] mfield  = new float[3];
 
     private long acc_lasttime = 0;
-    private long loc_lasttime = 0;
     private long ori_lasttime = 0;
 
     private boolean acc_log = false;
     private boolean loc_log = false;
     private boolean ori_log = false;
+
+    private PrintWriter acc_pw;
+    private PrintWriter loc_pw;
+    private PrintWriter ori_pw;
+
+    private DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             long curTime = System.currentTimeMillis();
 
-            if ((curTime - acc_lasttime) > 100) {
+            if ((curTime - acc_lasttime) > 1000) {
                 float acc = (float)Math.sqrt(gravity[0]*gravity[0]+
                                              gravity[1]*gravity[1]+
                                              gravity[2]*gravity[2]);
@@ -96,13 +109,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 acc_out.setText(String.format("%.2f", acc)+" m/s "+
                                 String.format("%.2f", g)+" g");
                 acc_lasttime = curTime;
+
+                // Log it!
+                if (acc_log) {
+                    acc_pw.println(df.format(new Date())+"  "+String.format("%.2f", acc)+" m/s");
+                }
             }
         }
 
         if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 
             long curTime = System.currentTimeMillis();
-            if ((curTime - ori_lasttime) > 100) {
+            if ((curTime - ori_lasttime) > 1000) {
                 mfield[0] = sensorEvent.values[0];
                 mfield[1] = sensorEvent.values[1];
                 mfield[2] = sensorEvent.values[2];
@@ -124,6 +142,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     ori_out.setText(String.format("%.1f", pitch) + "°  " +
                             String.format("%.1f", roll) + "°  " +
                             String.format("%.1f", heading) + "°");
+
+                    if (ori_log) {
+                        ori_pw.println(df.format(new Date())+"   "+
+                                String.format("%.1f", pitch) + "°  " +
+                                String.format("%.1f", roll) + "°  " +
+                                String.format("%.1f", heading) + "°");
+                    }
                 }
 
                 ori_lasttime = curTime;
@@ -136,19 +161,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             float latitude = (float) location.getLatitude();
             float longitude = (float) location.getLongitude();
             float altitude = (float) location.getAltitude();
-            float altitude_feet = altitude / 3.28f;
+            float altitude_feet = altitude * 3.28f;
+            float speed = (float) location.getSpeed();
+            float speed_knots = speed*1.94f;
 
-            String latitude_str = String.format("%.1f", latitude) + '°' + (latitude >= 0 ? 'N' : 'S');
-            String longitude_str = String.format("%.1f", longitude) + '°' + (longitude >= 0 ? 'E' : 'W');
+            String latitude_str = String.format("%.1f", Math.abs(latitude)) + '°' + (latitude >= 0 ? 'N' : 'S');
+            String longitude_str = String.format("%.1f", Math.abs(longitude)) + '°' + (longitude >= 0 ? 'E' : 'W');
 
             String altitude_str, altitude_feet_str;
-            if (altitude > 1000) altitude_str = (int) (altitude / 1000) + " km";
-            else altitude_str = (int) altitude + " m";
+            if (altitude > 1000) altitude_str = String.format("%.1f",(altitude/1000f)) + " km";
+            else altitude_str = String.format("%.1f",altitude) + " m";
 
-            if (altitude_feet > 1000) altitude_feet_str = (int) (altitude_feet / 1000) + "k feet";
-            else altitude_feet_str = (int) altitude_feet + " feet";
+            if (altitude_feet > 1000) altitude_feet_str = String.format("%.1f",(altitude_feet/1000f)) + "k feet";
+            else altitude_feet_str = String.format("%.1f",altitude_feet) + " feet";
 
-            loc_out.setText(latitude_str + "  " + longitude_str + "\n" + altitude_str + "  " + altitude_feet_str);
+            String speed_str = (int)speed + " m/s";
+            String speed_knots_str = (int)speed_knots + " knots";
+
+            loc_out.setText(latitude_str + "  " + longitude_str + "\n\n"+
+                            altitude_str + "  " + altitude_feet_str + "\n\n"+
+                            speed_str + "  " + speed_knots_str);
+
+            if (loc_log) {
+                loc_pw.println(df.format(new Date())+"   "+latitude_str+"  "+longitude_str+"  "+altitude_str+"  "+speed_str);
+            }
         }
     }
 
@@ -162,9 +198,67 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         ((CheckBox)view).setText(checked ? "Logging" : "Not Logging");
 
         switch(view.getId()) {
-            case R.id.acc_log: acc_log = checked; break;
-            case R.id.loc_log: loc_log = checked; break;
-            case R.id.ori_log: ori_log = checked; break;
+            case R.id.acc_log:
+                if (checked) {
+                    try {
+                        File acc_path = new File(Environment.getExternalStorageDirectory(), "/CockpitInfo/acc.log");
+                        if (!acc_path.exists()) {
+                            acc_path.getParentFile().mkdirs();
+                            acc_path.createNewFile();
+                        }
+                        FileWriter acc_fw = new FileWriter(acc_path, true);
+                        BufferedWriter acc_bw = new BufferedWriter(acc_fw);
+                        acc_pw = new PrintWriter(acc_bw);
+                        acc_log = true;
+                    } catch (Exception e) {
+                        System.out.println("File Error"+e);
+                        acc_log = false;
+                    }
+                } else {
+                    acc_pw.close();
+                    acc_log = false;
+                }
+                break;
+            case R.id.loc_log:
+                if (checked) {
+                    try {
+                        File loc_path = new File(Environment.getExternalStorageDirectory(), "/CockpitInfo/loc.log");
+                        if (!loc_path.exists()) {
+                            loc_path.getParentFile().mkdirs();
+                            loc_path.createNewFile();
+                        }
+                        FileWriter loc_fw = new FileWriter(loc_path, true);
+                        BufferedWriter loc_bw = new BufferedWriter(loc_fw);
+                        loc_pw = new PrintWriter(loc_bw);
+                        loc_log = true;
+                    } catch (Exception e) {
+                        loc_log = false;
+                    }
+                } else {
+                    loc_pw.close();
+                    loc_log = false;
+                }
+                break;
+            case R.id.ori_log:
+                if (checked) {
+                    try {
+                        File ori_path = new File(Environment.getExternalStorageDirectory(), "/CockpitInfo/ori.log");
+                        if (!ori_path.exists()) {
+                            ori_path.getParentFile().mkdirs();
+                            ori_path.createNewFile();
+                        }
+                        FileWriter ori_fw = new FileWriter(ori_path, true);
+                        BufferedWriter ori_bw = new BufferedWriter(ori_fw);
+                        ori_pw = new PrintWriter(ori_bw);
+                        ori_log = true;
+                    } catch (Exception e) {
+                        ori_log = false;
+                    }
+                } else {
+                    ori_pw.close();
+                    ori_log = false;
+                }
+                break;
         }
     }
 
